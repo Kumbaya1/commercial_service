@@ -28,7 +28,7 @@
     import 'geohey-javascript-sdk/dist/lib/g-canvas.min.js'        // canvas模块
     import 'geohey-javascript-sdk/dist/lib/g-cluster.min.js'    // 样式
 
-    const LOCATION_RES = 4.777314267822266
+    const LOCATION_RES = 0.597164283477783;//1.777314267822266
     export default {
         mounted: function () {
             this.map = new G.Map('map', {
@@ -58,7 +58,7 @@
             var SITE_CLUSTER = ['s1', 's2', 's3', 's4', 's5', 's6', 's7', 's8'];
             const Config_JZ = [
                 {
-                    "dataUid": "b303de501aec11e9a1f44f7f7e34dd86",
+                    "dataUid": "f75bd310459311e9bb2b7d918e4f0c95",
                     "dataType": "private",
                     "vizConfig": {
                         "type": "polygon-simple",
@@ -80,7 +80,7 @@
                     }
                 },
                 {
-                    "dataUid": "45feeed01aec11e99305859116f02652",
+                    "dataUid": "d987de60459311e9bb2b7d918e4f0c95",
                     "dataType": "private",
                     "vizConfig": {
                         "type": "polygon-simple",
@@ -118,7 +118,8 @@
                         cluster: SITE_CLUSTER
                     });
                     LinesCacheLayer.addTo(this.map);
-                    this.graphicLayer.bringToTop();
+                    LinesCacheLayer.bringDown(2)
+                   // this.graphicLayer.bringToTop();
                 })
                 .catch(err => {
                     console.log(err)
@@ -128,11 +129,15 @@
             this.clusterLayer = new G.Layer.Cluster({
                 clusterClickable: true,
                 pointClickable: true,
-                breakValues: [3, 5, 10]
+                breakValues: [3, 5, 10],
+                breakOutlineWidths: [8, 10, 12, 14],
+                // breakFillOpacities:[1.0,1.0,1.0,1.0],
+                // breakOutlineOpacities: [1, 1, 1, 1]
             });
             this.clusterLayer.addTo(this.map);  //加入到地图中
             this.clusterLayer.addListener('clusterClicked', this.onClusterClicked);
             this.clusterLayer.addListener('graphicClicked',this.onGraphicClicked);
+            this.clusterLayer.bringToTop();
             this.map.redraw();
 
         },
@@ -162,16 +167,14 @@
                 let g = e.graphic;
                 if(g.attrs.name!=undefined){
                     //先关闭之前点击的点
-                    this.endEdit();
-                    //再显示当前点击的点
-                    this.startEdit(g);
-
+                    // this.endEdit();
+                    // //再显示当前点击的点
+                    // this.startEdit(g);
                     let anchorPoint = g.geom;
                     this.zoomToLocation(anchorPoint);
                     let contenthtml = this.getPopupHtml(g.attrs);
                     this.map.showPopup(anchorPoint, contenthtml);
                 }
-
             },
             getPopupHtml(obj) {
                 const category = this.$route.params.category;
@@ -185,11 +188,12 @@
                 this.endEdit();
             },
             endEdit() { //关闭所有点亮的点
+                this.map.hidePopup(true);
                 const graphics = this.clusterLayer.all();
                 for (var g in graphics) {
                     if (graphics[g].isEditing && graphics[g].isEditing()) {
                         graphics[g].endEdit();
-                        this.map.hidePopup();
+
                     }
                 }
             },
@@ -198,7 +202,9 @@
                     g.startEdit({
                         vertexFillColor:this.$store.state.selectColors[this.$route.params.category - 1],
                         vertexColor:this.$store.state.selectColors[this.$route.params.category - 1],
-                        vertexDashArray:[0,0]
+                        vertexDashArray:[0,0],
+                        lineHighlightColor:'transparent',
+                        lineHighlightWiden:0
                     });
                 }
             },
@@ -232,11 +238,10 @@
             showPopup2(item) {
                 //1、从graphiclayer图层中获取graphic
                 console.log(item)
-
                 let g = this.clusterLayer.get(item.id);
                 console.log(g)
-                //先关闭之前点亮的点
-              //  this.endEdit();
+                // 先关闭之前点亮的点
+               this.endEdit();
                 //再高亮显示当前点击的点
                // this.startEdit(g);
                 //显示popup
@@ -249,7 +254,7 @@
             },
             zoomToLocation(location) {
                 if (location) {
-                    let newLocation = [location[0], location[1]-500];
+                    let newLocation = [location[0], location[1]-50];
                     this.map.zoomRes(newLocation, LOCATION_RES);
                     this.map.update();
                 }
